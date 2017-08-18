@@ -5,8 +5,9 @@ var router = express.Router();
 
 var PROJECT = "steren-test";
 var QUEUE_NAME = "migration-test-pull";
+var LOCATION = "us-central1";
 
-var BASE_URL = "https://www.googleapis.com/taskqueue/v1beta2/projects";
+var BASE_URL = "https://cloudtasks.googleapis.com/v2beta2/projects";
 var accessToken;
 
 
@@ -18,10 +19,7 @@ function doTheAuthenticationDance() {
     key.private_key,
     [
       'https://www.googleapis.com/auth/cloud-platform',
-      'https://www.googleapis.com/auth/taskqueue',
-      'https://www.googleapis.com/auth/taskqueue.consumer',
-      'https://www.googleapis.com/auth/cloud-taskqueue',
-      'https://www.googleapis.com/auth/cloud-taskqueue.consumer',
+      'https://www.googleapis.com/auth/cloud-tasks',
     ],
     null
   );
@@ -65,20 +63,22 @@ router.get('/test', function(req, res, next) {
 });
 
 router.get('/queue', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/taskqueues/${QUEUE_NAME}?getStats=true`;
+  var url = `${BASE_URL}/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}`;
   callAPI(url, 'GET', null, function(error, response, body) {
     res.send(body);
   });
 });
 
 router.get('/create', function(req, res, next) {
-  var url = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks`;
+  var url = `${BASE_URL}/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks`;
 
   var payload = "abc";
   var json = {
-    kind: "taskqueues#task",
-    queueName: QUEUE_NAME,
-    payloadBase64: payload
+    task: {
+      pullTaskTarget: {
+        payload: payload
+      }
+    }
   }
 
   callAPI(url, 'POST', json, function(error, response, body) {
@@ -88,19 +88,23 @@ router.get('/create', function(req, res, next) {
 });
 
 router.get('/leasedelete', function(req, res, next) {
-  var url = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/lease?leaseSecs=10&numTasks=1`;
+  var url = `${BASE_URL}/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks:pull`;
 
-  callAPI(url, 'POST', {}, function(error, response, body) {
-    if(!body.items || body.items.length == 0) {
+  var json = {
+    maxTasks: 1,
+    leaseDuration: "10s",
+  }
+
+  callAPI(url, 'POST', json, function(error, response, body) {
+    if(!body.tasks || body.tasks.length == 0) {
       console.warn('No task to lease');
       res.send('No task to lease');
     } else {
-      console.log(body.items[0]);
-      var taskName = body.items[0].id;
+      var taskName = body.tasks[0].name;
       console.log('Task leased: ' + taskName);
 
-      var deleteUrl = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/${taskName}`;
-      callAPI(deleteUrl, 'DELETE', null, function(error, response, body) {
+      var deleteUrl = `${BASE_URL}/${PROJECT}locations/${LOCATION}/queues/${QUEUE_NAME}/tasks/${taskName}:acknowledge`;
+      callAPI(deleteUrl, 'POST', null, function(error, response, body) {
         console.log('Task deleted');
         res.send('Task leased and deleted');
       });
