@@ -3,11 +3,12 @@ var request = require('request');
 var google = require('googleapis');
 var router = express.Router();
 
-var BASE_URL = "https://www.googleapis.com/taskqueue/v1beta2/projects";
 var PROJECT = "steren-test";
-//var queueName = "migration-test-queue	";
-var queueName = "migration-test-pull";
+var QUEUE_NAME = "migration-test-pull";
+
+var BASE_URL = "https://www.googleapis.com/taskqueue/v1beta2/projects";
 var accessToken;
+
 
 function doTheAuthenticationDance() {
   var key = require('../key.json');
@@ -35,16 +36,24 @@ function doTheAuthenticationDance() {
   });
 }
 
-function callAPI(url, method, form, callback) {
+function callAPI(url, method, payload, callback) {
   var headers = {
       'Authorization': `Bearer ${accessToken}`
-  }
+  };
   var options = {
       url: url,
       method: method,
       headers: headers,
-      form: form
-  }
+  };
+
+  if(payload) {
+    options.json = {
+      kind: "taskqueues#task",
+      queueName: QUEUE_NAME,
+      payloadBase64: payload
+    };
+  };
+
   request(options, callback);
 }
 
@@ -59,23 +68,25 @@ router.get('/test', function(req, res, next) {
     if(error) {res.send(error);}
     res.send(body);
   });
-
 });
 
 router.get('/detail', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/taskqueues/${queueName}`;
-  callAPI(url, 'GET', {}, function(error, response, body){
+  var url = `${BASE_URL}/${PROJECT}/taskqueues/${QUEUE_NAME}?getStats=true`;
+  callAPI(url, 'GET', null, function(error, response, body) {
     if(error) {res.send(error);}
     res.send(body);
   });
-
 });
 
 router.get('/create', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/taskqueues/${queueName}/tasks`;
-  // POST
+  var url = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks`;
 
-  res.send({});
+  var payload = "abc";
+
+  callAPI(url, 'POST', payload, function(error, response, body) {
+    if(error) {res.send(error);}
+    res.send(body);
+  });
 });
 
 doTheAuthenticationDance();
