@@ -60,7 +60,6 @@ router.get('/', function(req, res, next) {
 router.get('/test', function(req, res, next) {
   var url = `https://clouderrorreporting.googleapis.com/v1beta1/projects/${PROJECT}/groupStats`;
   callAPI(url, 'GET', {}, function(error, response, body){
-    if(error) {res.send(error);}
     res.send(body);
   });
 });
@@ -68,11 +67,6 @@ router.get('/test', function(req, res, next) {
 router.get('/queue', function(req, res, next) {
   var url = `${BASE_URL}/${PROJECT}/taskqueues/${QUEUE_NAME}?getStats=true`;
   callAPI(url, 'GET', null, function(error, response, body) {
-    if(error) {
-      console.error(error);
-      res.send(error);
-      return;
-    }
     res.send(body);
   });
 });
@@ -88,11 +82,6 @@ router.get('/create', function(req, res, next) {
   }
 
   callAPI(url, 'POST', json, function(error, response, body) {
-    if(error) {
-      console.error(error);
-      res.send(error);
-      return;
-    }
     console.log('Task created');
     res.send(body);
   });
@@ -102,10 +91,6 @@ router.get('/leasedelete', function(req, res, next) {
   var url = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/lease?leaseSecs=10&numTasks=1`;
 
   callAPI(url, 'POST', {}, function(error, response, body) {
-    if(error) {
-      console.error(error);
-      res.send(error);
-    }
     if(!body.items || body.items.length == 0) {
       console.warn('No task to lease');
       res.send('No task to lease');
@@ -115,13 +100,7 @@ router.get('/leasedelete', function(req, res, next) {
       console.log('Task leased: ' + taskName);
 
       var deleteUrl = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/${taskName}`;
-      console.log(deleteUrl);
       callAPI(deleteUrl, 'DELETE', null, function(error, response, body) {
-        if(error) {
-          console.error(error);
-          res.send(error);
-          return;
-        }
         console.log('Task deleted');
         res.send('Task leased and deleted');
       });
