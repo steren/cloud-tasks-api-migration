@@ -7,7 +7,7 @@ var PROJECT = "steren-test";
 var QUEUE_NAME = "migration-test-pull";
 var LOCATION = "us-central1";
 
-var BASE_URL = "https://cloudtasks.googleapis.com/v2beta2/projects";
+var BASE_URL = "https://cloudtasks.googleapis.com/v2beta2";
 var accessToken;
 
 
@@ -63,14 +63,14 @@ router.get('/test', function(req, res, next) {
 });
 
 router.get('/queue', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}`;
+  var url = `${BASE_URL}/projects/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}`;
   callAPI(url, 'GET', null, function(error, response, body) {
     res.send(body);
   });
 });
 
 router.get('/create', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks`;
+  var url = `${BASE_URL}/projects/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks`;
 
   var payload = "abc";
   var json = {
@@ -88,14 +88,14 @@ router.get('/create', function(req, res, next) {
 });
 
 router.get('/leasedelete', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks:pull`;
+  var url = `${BASE_URL}/projects/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks:pull`;
 
-  var json = {
+  var leaseBody = {
     maxTasks: 1,
     leaseDuration: "10s",
   }
 
-  callAPI(url, 'POST', json, function(error, response, body) {
+  callAPI(url, 'POST', leaseBody, function(error, response, body) {
     if(!body.tasks || body.tasks.length == 0) {
       console.warn('No task to lease');
       res.send('No task to lease');
@@ -103,8 +103,11 @@ router.get('/leasedelete', function(req, res, next) {
       var taskName = body.tasks[0].name;
       console.log('Task leased: ' + taskName);
 
-      var deleteUrl = `${BASE_URL}/${PROJECT}locations/${LOCATION}/queues/${QUEUE_NAME}/tasks/${taskName}:acknowledge`;
-      callAPI(deleteUrl, 'POST', null, function(error, response, body) {
+      var deleteBody = {
+        schedule_time : body.tasks[0].scheduleTime
+      }
+      var deleteUrl = `${BASE_URL}/${taskName}:acknowledge`;
+      callAPI(deleteUrl, 'POST', deleteBody, function(error, response, body) {
         console.log('Task deleted');
         res.send('Task leased and deleted');
       });
