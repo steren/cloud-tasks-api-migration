@@ -6,7 +6,7 @@ var router = express.Router();
 var PROJECT = "steren-test";
 var QUEUE_NAME = "migration-test-pull";
 
-var BASE_URL = "https://www.googleapis.com/taskqueue/v1beta2/projects";
+var BASE_URL = "https://www.googleapis.com/taskqueue/v1beta2";
 var accessToken;
 
 
@@ -65,14 +65,14 @@ router.get('/test', function(req, res, next) {
 });
 
 router.get('/queue', function(req, res, next) {
-  var url = `${BASE_URL}/${PROJECT}/taskqueues/${QUEUE_NAME}?getStats=true`;
+  var url = `${BASE_URL}/projects/${PROJECT}/taskqueues/${QUEUE_NAME}?getStats=true`;
   callAPI(url, 'GET', null, function(error, response, body) {
     res.send(body);
   });
 });
 
 router.get('/create', function(req, res, next) {
-  var url = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks`;
+  var url = `${BASE_URL}/projects/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks`;
 
   var payload = "abc";
   var json = {
@@ -88,7 +88,7 @@ router.get('/create', function(req, res, next) {
 });
 
 router.get('/leasedelete', function(req, res, next) {
-  var url = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/lease?leaseSecs=10&numTasks=1`;
+  var url = `${BASE_URL}/projects/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/lease?leaseSecs=10&numTasks=1`;
 
   callAPI(url, 'POST', {}, function(error, response, body) {
     if(!body.items || body.items.length == 0) {
@@ -99,7 +99,7 @@ router.get('/leasedelete', function(req, res, next) {
       var taskName = body.items[0].id;
       console.log('Task leased: ' + taskName);
 
-      var deleteUrl = `${BASE_URL}/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/${taskName}`;
+      var deleteUrl = `${BASE_URL}/projects/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/${taskName}`;
       callAPI(deleteUrl, 'DELETE', null, function(error, response, body) {
         console.log('Task deleted');
         res.send('Task leased and deleted');
