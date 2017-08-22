@@ -74,7 +74,7 @@ router.get('/queue', function(req, res, next) {
 router.get('/create', function(req, res, next) {
   var url = `${BASE_URL}/projects/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks`;
 
-  var payload = "abc";
+  var payload = new Buffer("abc char:!@#$%ˆ&*()_+").toString('base64');
   var json = {
     kind: "taskqueues#task",
     queueName: QUEUE_NAME,
@@ -95,14 +95,16 @@ router.get('/leasedelete', function(req, res, next) {
       console.warn('No task to lease');
       res.send('No task to lease');
     } else {
-      console.log(body.items[0]);
+      //console.log(body.items[0]);
       var taskName = body.items[0].id;
+      var decodedPayload = Buffer.from(body.items[0].payloadBase64, 'base64').toString("ascii");
       console.log('Task leased: ' + taskName);
+      console.log('decoded payload: ' + decodedPayload);
 
       var deleteUrl = `${BASE_URL}/projects/s~${PROJECT}/taskqueues/${QUEUE_NAME}/tasks/${taskName}`;
       callAPI(deleteUrl, 'DELETE', null, function(error, response, body) {
         console.log('Task deleted');
-        res.send('Task leased and deleted');
+        res.send('Task leased and deleted, payload: ' + decodedPayload);
       });
     }
   });
