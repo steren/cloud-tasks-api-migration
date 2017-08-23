@@ -72,7 +72,7 @@ router.get('/queue', function(req, res, next) {
 router.get('/create', function(req, res, next) {
   var url = `${BASE_URL}/projects/${PROJECT}/locations/${LOCATION}/queues/${QUEUE_NAME}/tasks`;
 
-  var payload = "abc";
+  var payload = new Buffer("abc char:!@#$%ˆ&*()_+").toString('base64');
   var json = {
     task: {
       pullTaskTarget: {
@@ -93,6 +93,7 @@ router.get('/leasedelete', function(req, res, next) {
   var leaseBody = {
     maxTasks: 1,
     leaseDuration: "10s",
+    responseView: 'FULL'
   }
 
   callAPI(url, 'POST', leaseBody, function(error, response, body) {
@@ -101,7 +102,10 @@ router.get('/leasedelete', function(req, res, next) {
       res.send('No task to lease');
     } else {
       var taskName = body.tasks[0].name;
+      var decodedPayload = Buffer.from(body.tasks[0].pullTaskTarget.payload, 'base64').toString("ascii");
       console.log('Task leased: ' + taskName);
+      console.log('payload: ' + body.tasks[0].pullTaskTarget.payload);
+      console.log('decoded payload: ' + decodedPayload);
 
       var deleteBody = {
         schedule_time : body.tasks[0].scheduleTime
@@ -109,7 +113,7 @@ router.get('/leasedelete', function(req, res, next) {
       var deleteUrl = `${BASE_URL}/${taskName}:acknowledge`;
       callAPI(deleteUrl, 'POST', deleteBody, function(error, response, body) {
         console.log('Task deleted');
-        res.send('Task leased and deleted');
+        res.send('Task leased and deleted, payload: ' + decodedPayload);
       });
     }
   });
