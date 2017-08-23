@@ -93,6 +93,7 @@ router.get('/leasedelete', function(req, res, next) {
   var leaseBody = {
     maxTasks: 1,
     leaseDuration: "10s",
+    responseView: 'FULL'
   }
 
   callAPI(url, 'POST', leaseBody, function(error, response, body) {
